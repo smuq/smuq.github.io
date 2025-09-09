@@ -1,0 +1,2 @@
+# smuq.github.io
+Дискрёбыш
