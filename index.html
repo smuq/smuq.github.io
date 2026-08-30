@@ -3,374 +3,486 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Neural Interface - Steam Style</title>
+    <title>AI Interface - Steam Style</title>
+    <!-- Подключаем Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
     <style>
         :root {
             --steam-bg: #1b2838;
             --steam-header: #171a21;
-            --steam-card: #2a475e;
+            --steam-content: #2a475e;
             --steam-text: #c7d5e0;
             --steam-blue: #66c0f4;
             --steam-green: #5c7e10;
-            --steam-green-hover: #4c6b0d;
+            --steam-green-hover: #4c6b22;
             --qwen-color: #ff9d00;
-            --deepseek-color: #0052cc;
+            --deepseek-color: #007bff;
         }
 
         body {
-            background-color: var(--steam-bg);
-            color: var(--steam-text);
-            font-family: "Motiva Sans", Arial, sans-serif;
             margin: 0;
             padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: "Motiva Sans", Arial, Helvetica, sans-serif;
+            background-color: var(--steam-bg);
+            color: var(--steam-text);
+            background-image: linear-gradient(to bottom, #1b2838 0%, #2a475e 100%);
             min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
         /* Header & Auth */
         header {
-            width: 100%;
-            background: linear-gradient(to right, #0f1215, #1b2838);
-            padding: 20px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            text-align: center;
-            border-bottom: 2px solid var(--steam-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         h1 {
-            margin: 0 0 15px 0;
+            color: var(--steam-text);
             font-size: 24px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(102, 192, 244, 0.5);
+            letter-spacing: 1px;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
 
         .auth-container {
             display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
         }
 
-        .auth-btn {
-            background: linear-gradient(to bottom, #4a90d9, #2a5a8a);
+        .btn-auth {
+            background: linear-gradient( to bottom, #47bfff 5%, #1a44c2 60%);
             border: none;
-            padding: 10px 20px;
             color: white;
-            font-weight: bold;
-            cursor: pointer;
+            padding: 10px 20px;
             border-radius: 4px;
-            transition: all 0.3s;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 14px;
-            text-decoration: none;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
         }
 
-        .auth-btn.qwen { border-bottom: 2px solid var(--qwen-color); }
-        .auth-btn.deepseek { border-bottom: 2px solid var(--deepseek-color); }
-
-        .auth-btn:hover {
+        .btn-auth:hover {
             filter: brightness(1.2);
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
 
-        .status-dot {
-            height: 10px;
-            width: 10px;
-            background-color: #555;
-            border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
+        .btn-auth.qwen { background: linear-gradient( to bottom, #ffbf47 5%, #c25c1a 60%); }
+        .btn-auth.deepseek { background: linear-gradient( to bottom, #478aff 5%, #1a2cc2 60%); }
 
-        .status-dot.connected {
-            background-color: #4caf50;
-            box-shadow: 0 0 8px #4caf50;
-        }
-
-        /* Main Content */
-        main {
-            width: 90%;
-            max-width: 1000px;
-            margin-top: 30px;
-            flex-grow: 1;
-        }
-
-        .input-section {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border: 1px solid #3a5c7a;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .input-label {
+        .user-status {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 8px;
+            font-size: 14px;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 15px;
+            border-radius: 4px;
+            border: 1px solid var(--steam-blue);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #ccc;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #ccc;
+        }
+        .status-dot.active {
+            background-color: #a4d007;
+            box-shadow: 0 0 8px #a4d007;
+        }
+
+        /* Inputs */
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .model-input-group {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ccc;
+            position: relative;
+        }
+
+        .model-input-group.qwen { border-left-color: var(--qwen-color); }
+        .model-input-group.deepseek { border-left-color: var(--deepseek-color); }
+
+        .model-label {
+            font-size: 18px;
             font-weight: bold;
-            color: var(--steam-blue);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .badge {
-            padding: 2px 8px;
-            border-radius: 4px;
             font-size: 12px;
-            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            color: #1b2838;
             font-weight: bold;
         }
-        .badge-qwen { background-color: var(--qwen-color); }
-        .badge-deepseek { background-color: var(--deepseek-color); }
+        .badge.qwen { background-color: var(--qwen-color); }
+        .badge.deepseek { background-color: var(--deepseek-color); color: white; }
 
         textarea {
             width: 100%;
-            background: #151d25;
-            border: 1px solid #3a5c7a;
-            color: #fff;
-            padding: 15px;
-            border-radius: 4px;
+            height: 80px;
+            background: #101820;
+            border: 1px solid #3a4b5e;
+            color: white;
+            padding: 10px;
+            border-radius: 3px;
             resize: vertical;
-            min-height: 80px;
             font-family: inherit;
             box-sizing: border-box;
-            transition: border 0.3s;
         }
 
         textarea:focus {
             outline: none;
             border-color: var(--steam-blue);
-            box-shadow: 0 0 10px rgba(102, 192, 244, 0.3);
+            box-shadow: 0 0 10px rgba(102, 192, 244, 0.2);
         }
 
-        .submit-btn {
-            background: linear-gradient(to bottom, #a4d007, #5c7e10);
+        /* Action Button */
+        .action-area {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .btn-submit {
+            background: linear-gradient( to bottom, #a4d007 5%, #536904 95%);
+            color: #d4e9a8;
             border: none;
             padding: 15px 40px;
-            color: white;
             font-size: 18px;
             font-weight: bold;
             text-transform: uppercase;
-            cursor: pointer;
             border-radius: 4px;
-            width: 100%;
-            margin-top: 10px;
+            cursor: pointer;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 0 10px rgba(164, 208, 7, 0.3);
             transition: all 0.2s;
         }
 
-        .submit-btn:hover {
-            background: linear-gradient(to bottom, #b8e608, #6a9112);
-            transform: scale(1.01);
+        .btn-submit:hover {
+            background: linear-gradient( to bottom, #b6e018 5%, #6b8505 95%);
+            color: #fff;
+            transform: scale(1.02);
         }
 
-        .submit-btn:active {
-            transform: scale(0.99);
+        .btn-submit:disabled {
+            background: #3a4b5e;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        /* Output Section */
+        /* Outputs */
         .output-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-top: 30px;
         }
 
         @media (max-width: 768px) {
-            .output-grid {
-                grid-template-columns: 1fr;
-            }
+            .output-grid { grid-template-columns: 1fr; }
+            header { flex-direction: column; align-items: flex-start; }
+            .auth-container { width: 100%; justify-content: space-between; }
         }
 
-        .output-card {
-            background: var(--steam-card);
-            border-radius: 4px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-header {
-            background: rgba(0,0,0,0.3);
-            padding: 10px 15px;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .card-content {
+        .response-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #3a4b5e;
+            border-radius: 5px;
             padding: 20px;
             min-height: 200px;
-            color: #dbe2e8;
+            position: relative;
+        }
+
+        .response-card h3 {
+            margin-top: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .response-content {
             line-height: 1.6;
+            font-size: 14px;
             white-space: pre-wrap;
         }
 
-        .loading {
-            color: var(--steam-blue);
-            font-style: italic;
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: var(--steam-blue);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+            display: none;
         }
 
-        footer {
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .repo-link {
             margin-top: 40px;
-            padding: 20px;
             text-align: center;
             font-size: 12px;
-            color: #556;
-            border-top: 1px solid #333;
-            width: 100%;
+            color: #555;
         }
-        
-        a.repo-link {
-            color: var(--steam-blue);
-            text-decoration: none;
-        }
-        a.repo-link:hover {
-            text-decoration: underline;
-        }
+        .repo-link a { color: var(--steam-blue); text-decoration: none; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Neural Network Interface</h1>
-    <div class="auth-container">
-        <button class="auth-btn qwen" onclick="alert('Форма авторизации Qwen (Email) будет здесь')">
-            <span class="status-dot" id="status-qwen"></span>
-            🔐 Qwen Авторизация
-        </button>
-        <button class="auth-btn deepseek" onclick="alert('Форма авторизации DeepSeek (Email) будет здесь')">
-            <span class="status-dot" id="status-deepseek"></span>
-            🔐 DeepSeek Авторизация
-        </button>
-    </div>
-</header>
+<div class="container">
+    <header>
+        <h1>🤖 AI Neural Interface</h1>
+        
+        <div class="auth-container">
+            <!-- Кнопки входа -->
+            <button id="btnLoginQwen" class="btn-auth qwen" onclick="handleLogin('qwen')">
+                🔐 Qwen Вход
+            </button>
+            <button id="btnLoginDeepSeek" class="btn-auth deepseek" onclick="handleLogin('deepseek')">
+                🔐 DeepSeek Вход
+            </button>
 
-<main>
-    <!-- Input Section -->
+            <!-- Статус пользователя (скрыт по умолчанию) -->
+            <div id="userStatus" class="user-status" style="display: none;">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="userName">User</span>
+                <button onclick="handleLogout()" style="background:none; border:none; color:#aaa; cursor:pointer; margin-left:10px;">✕</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Секция ввода -->
     <div class="input-section">
-        <div class="input-group">
-            <label class="input-label">
-                <span class="badge badge-qwen">QWEN</span>
-                Введите запрос:
-            </label>
-            <textarea id="input-qwen" placeholder="Введите сообщение для модели Qwen..."></textarea>
+        <div class="model-input-group qwen">
+            <div class="model-label">
+                <span class="badge qwen">QWEN</span>
+                Введите запрос
+            </div>
+            <textarea id="inputQwen" placeholder="Введите сообщение для Qwen... (Enter для отправки)"></textarea>
         </div>
 
-        <div class="input-group">
-            <label class="input-label">
-                <span class="badge badge-deepseek">DEEPSEEK</span>
-                Введите запрос:
-            </label>
-            <textarea id="input-deepseek" placeholder="Введите сообщение для модели DeepSeek..."></textarea>
+        <div class="model-input-group deepseek">
+            <div class="model-label">
+                <span class="badge deepseek">DEEPSEEK</span>
+                Введите запрос
+            </div>
+            <textarea id="inputDeepSeek" placeholder="Введите сообщение для DeepSeek... (Enter для отправки)"></textarea>
         </div>
+    </div>
 
-        <button class="submit-btn" onclick="sendRequests()">
-            ОТПРАВИТЬ ОБОИМ МОДЕЛЯМ
+    <!-- Кнопка действия -->
+    <div class="action-area">
+        <button id="btnSubmit" class="btn-submit" onclick="sendRequests()">
+            Отправить обоим моделям
         </button>
     </div>
 
-    <!-- Output Section -->
+    <!-- Секция вывода -->
     <div class="output-grid">
-        <div class="output-card">
-            <div class="card-header">
-                <span><span class="badge badge-qwen">QWEN</span> Ответ</span>
-                <span id="loader-qwen" style="display:none; font-size:12px;">⏳ Загрузка...</span>
-            </div>
-            <div class="card-content" id="output-qwen">
-                Ожидание запроса...
+        <div class="response-card">
+            <h3><span class="badge qwen">QWEN</span> Ответ</h3>
+            <div class="response-content" id="outputQwen">
+                <span class="loading-spinner" id="spinnerQwen"></span>
+                <span id="textQwen">Ожидание запроса...</span>
             </div>
         </div>
 
-        <div class="output-card">
-            <div class="card-header">
-                <span><span class="badge badge-deepseek">DEEPSEEK</span> Ответ</span>
-                <span id="loader-deepseek" style="display:none; font-size:12px;">⏳ Загрузка...</span>
-            </div>
-            <div class="card-content" id="output-deepseek">
-                Ожидание запроса...
+        <div class="response-card">
+            <h3><span class="badge deepseek">DEEPSEEK</span> Ответ</h3>
+            <div class="response-content" id="outputDeepSeek">
+                <span class="loading-spinner" id="spinnerDeepSeek"></span>
+                <span id="textDeepSeek">Ожидание запроса...</span>
             </div>
         </div>
     </div>
-</main>
 
-<footer>
-    <p>Приватный доступ через репозиторий: <a href="https://github.com/smuq/smuq.github.io" target="_blank" class="repo-link">smuq.github.io</a></p>
-    <p>&copy; 2024 AI Interface. Steam Design Concept.</p>
-</footer>
+    <div class="repo-link">
+        Приватный репозиторий: <a href="https://github.com/smuq/smuq.github.io" target="_blank">GitHub Repo</a>
+    </div>
+</div>
 
 <script>
-    // Функция имитации отправки (так как реальные API ключи нельзя хранить в публичном коде)
-    async function sendRequests() {
-        const inputQwen = document.getElementById('input-qwen').value;
-        const inputDeepSeek = document.getElementById('input-deepseek').value;
-        
-        const outputQwen = document.getElementById('output-qwen');
-        const outputDeepSeek = document.getElementById('output-deepseek');
-        
-        const loaderQwen = document.getElementById('loader-qwen');
-        const loaderDeepSeek = document.getElementById('loader-deepseek');
+    // ==========================================
+    // НАСТРОЙКИ FIREBASE (ЗАПОЛНИТЕ ЭТИ ДАННЫЕ)
+    // ==========================================
+    const firebaseConfig = {
+        apiKey: "ВАШ_API_KEY",
+        authDomain: "ВАШ_PROJECT_ID.firebaseapp.com",
+        projectId: "ВАШ_PROJECT_ID",
+        storageBucket: "ВАШ_PROJECT_ID.appspot.com",
+        messagingSenderId: "ВАШ_SENDER_ID",
+        appId: "ВАШ_APP_ID"
+    };
 
-        if (!inputQwen && !inputDeepSeek) {
-            alert("Пожалуйста, введите хотя бы один запрос.");
+    // Инициализация Firebase
+    let auth;
+    try {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        console.log("Firebase initialized");
+    } catch (e) {
+        console.error("Ошибка инициализации Firebase. Проверьте конфиг.", e);
+        alert("Ошибка настройки авторизации. См. консоль браузера.");
+    }
+
+    let currentUser = null;
+    let activeModel = null; // Какую модель выбираем для входа
+
+    // Слушатель состояния авторизации
+    if (auth) {
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            updateUI(user);
+        });
+    }
+
+    function updateUI(user) {
+        const statusDiv = document.getElementById('userStatus');
+        const nameSpan = document.getElementById('userName');
+        const dot = document.getElementById('statusDot');
+        const btnQwen = document.getElementById('btnLoginQwen');
+        const btnDeepSeek = document.getElementById('btnLoginDeepSeek');
+
+        if (user) {
+            statusDiv.style.display = 'flex';
+            nameSpan.textContent = user.email.split('@')[0];
+            dot.classList.add('active');
+            
+            // Скрываем кнопки входа, если уже вошли
+            btnQwen.style.display = 'none';
+            btnDeepSeek.style.display = 'none';
+        } else {
+            statusDiv.style.display = 'none';
+            // Показываем кнопки снова
+            btnQwen.style.display = 'flex';
+            btnDeepSeek.style.display = 'flex';
+        }
+    }
+
+    function handleLogin(model) {
+        if (!auth) {
+            alert("Firebase еще не настроен! Добавьте конфигурацию в код.");
+            return;
+        }
+        activeModel = model;
+        
+        const provider = new firebase.auth.GoogleAuthProvider();
+        // Добавляем подсказку, чтобы окно не блокировалось
+        provider.setCustomParameters({
+            prompt: 'select_account'
+        });
+
+        auth.signInWithPopup(provider)
+            .then((result) => {
+                console.log(`Успешный вход через ${model}`, result.user);
+                // Здесь можно сохранить токен для последующих запросов к API нейросети
+                localStorage.setItem('ai_auth_token', result.credential.accessToken);
+            }).catch((error) => {
+                console.error("Ошибка входа:", error);
+                alert("Ошибка авторизации: " + error.message);
+            });
+    }
+
+    function handleLogout() {
+        if (auth) {
+            auth.signOut().then(() => {
+                localStorage.removeItem('ai_auth_token');
+                console.log("Выход выполнен");
+            });
+        }
+    }
+
+    // Логика отправки запросов
+    async function sendRequests() {
+        const inputQ = document.getElementById('inputQwen').value;
+        const inputD = document.getElementById('inputDeepSeek').value;
+        const outQ = document.getElementById('textQwen');
+        const outD = document.getElementById('textDeepSeek');
+        const spinQ = document.getElementById('spinnerQwen');
+        const spinD = document.getElementById('spinnerDeepSeek');
+        const btn = document.getElementById('btnSubmit');
+
+        if (!inputQ && !inputD) {
+            alert("Введите хотя бы один запрос!");
             return;
         }
 
-        // Имитация загрузки
-        if (inputQwen) {
-            outputQwen.innerHTML = '<span class="loading">Генерация ответа...</span>';
-            loaderQwen.style.display = 'inline';
+        // Блокируем кнопку и показываем спиннеры
+        btn.disabled = true;
+        btn.textContent = "Обработка...";
+        
+        if (inputQ) {
+            spinQ.style.display = 'inline-block';
+            outQ.textContent = "Генерация ответа...";
         }
-        if (inputDeepSeek) {
-            outputDeepSeek.innerHTML = '<span class="loading">Генерация ответа...</span>';
-            loaderDeepSeek.style.display = 'inline';
+        if (inputD) {
+            spinD.style.display = 'inline-block';
+            outD.textContent = "Генерация ответа...";
         }
 
-        // Симуляция задержки сети
+        // СИМУЛЯЦИЯ ЗАПРОСА (ЗДЕСЬ БУДЕТ РЕАЛЬНЫЙ ВЫЗОВ API)
+        // Так как у нас нет бэкенда, мы имитируем задержку и ответ
+        
         setTimeout(() => {
-            if (inputQwen) {
-                loaderQwen.style.display = 'none';
-                outputQwen.innerText = `[Qwen Demo]:\nПолучен запрос: "${inputQwen}"\n\nЭто демонстрационный ответ. Для реальной работы необходимо подключить API в коде.`;
-                // Анимация мигания статуса при успехе
-                blinkStatus('status-qwen');
+            if (inputQ) {
+                spinQ.style.display = 'none';
+                outQ.textContent = `[Qwen Demo]:\nПолучен ваш запрос: "${inputQ}"\n\n(Для реальной работы нужно подключить API ключ Qwen в коде)`;
+            }
+            if (inputD) {
+                spinD.style.display = 'none';
+                outD.textContent = `[DeepSeek Demo]:\nПолучен ваш запрос: "${inputD}"\n\n(Для реальной работы нужно подключить API ключ DeepSeek в коде)`;
             }
             
-            if (inputDeepSeek) {
-                loaderDeepSeek.style.display = 'none';
-                outputDeepSeek.innerText = `[DeepSeek Demo]:\nПолучен запрос: "${inputDeepSeek}"\n\nЭто демонстрационный ответ. Для реальной работы необходимо подключить API в коде.`;
-                blinkStatus('status-deepseek');
-            }
-        }, 1500);
+            btn.disabled = false;
+            btn.textContent = "Отправить обоим моделям";
+        }, 2000);
     }
 
-    function blinkStatus(id) {
-        const dot = document.getElementById(id);
-        dot.classList.add('connected');
-        setTimeout(() => dot.classList.remove('connected'), 1000);
-    }
-
-    // Отправка по Enter (если не нажат Shift)
-    document.querySelectorAll('textarea').forEach(area => {
-        area.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendRequests();
-            }
-        });
+    // Отправка по Enter
+    document.getElementById('inputQwen').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendRequests();
+        }
+    });
+    document.getElementById('inputDeepSeek').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendRequests();
+        }
     });
 </script>
 
