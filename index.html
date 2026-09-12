@@ -97,6 +97,14 @@
         .btn-auth.qwen { background: linear-gradient( to bottom, #ffbf47 5%, #c25c1a 60%); }
         .btn-auth.deepseek { background: linear-gradient( to bottom, #478aff 5%, #1a2cc2 60%); }
 
+        /* Кнопка модели, в которую уже вошли */
+        .btn-auth:disabled {
+            cursor: default;
+            opacity: 0.75;
+            filter: saturate(0.7);
+            transform: none;
+        }
+
         .user-status {
             display: flex;
             align-items: center;
@@ -151,6 +159,7 @@
 
         .model-input-group.qwen { border-left-color: var(--qwen-color); }
         .model-input-group.deepseek { border-left-color: var(--deepseek-color); }
+        .model-input-group.shared { border-left-color: var(--steam-blue); }
 
         .model-label {
             font-size: 18px;
@@ -170,6 +179,7 @@
         }
         .badge.qwen { background-color: var(--qwen-color); }
         .badge.deepseek { background-color: var(--deepseek-color); color: white; }
+        .badge.shared { background-color: var(--steam-blue); color: #1b2838; }
 
         textarea {
             width: 100%;
@@ -448,20 +458,12 @@
 
     <!-- Секция ввода -->
     <div class="input-section">
-        <div class="model-input-group qwen">
+        <div class="model-input-group shared">
             <div class="model-label">
-                <span class="badge qwen">QWEN</span>
-                Введите запрос
+                <span class="badge shared">ЗАПРОС</span>
+                Один запрос — обеим моделям
             </div>
-            <textarea id="inputQwen" placeholder="Введите сообщение для Qwen... (Enter для отправки)"></textarea>
-        </div>
-
-        <div class="model-input-group deepseek">
-            <div class="model-label">
-                <span class="badge deepseek">DEEPSEEK</span>
-                Введите запрос
-            </div>
-            <textarea id="inputDeepSeek" placeholder="Введите сообщение для DeepSeek... (Enter для отправки)"></textarea>
+            <textarea id="inputQuery" placeholder="Введите сообщение — оно уйдёт и Qwen, и DeepSeek (Enter для отправки)"></textarea>
         </div>
     </div>
 
@@ -518,6 +520,7 @@
     let accessToken = null;
     let currentUser = null;
     let activeModel = null; // Какая модель была выбрана для входа
+    let loginState = { qwen: false, deepseek: false }; // вход отдельно для каждой модели
 
     // ==========================================
     // Инициализация Google Identity Services
@@ -562,7 +565,9 @@
                 if (info.error) throw new Error(info.error.message || "не удалось получить профиль");
                 const user = { email: info.email || "unknown", name: info.name || "" };
                 currentUser = user;
+                loginState[activeModel] = true; // отмечаем вход именно в эту модель
                 localStorage.setItem("ai_google_user", JSON.stringify(user));
+                localStorage.setItem("ai_google_models", JSON.stringify(loginState));
                 hideAuthMessage();
                 updateUI(user);
                 console.log("Успешный вход через Google (" + activeModel + ") → " + user.email);
@@ -590,6 +595,9 @@
             const saved = JSON.parse(localStorage.getItem("ai_google_user") || "null");
             if (saved && saved.email) {
                 currentUser = saved;
+                const models = JSON.parse(localStorage.getItem("ai_google_models") || "{}");
+                loginState.qwen = !!models.qwen;
+                loginState.deepseek = !!models.deepseek;
                 updateUI(saved);
             }
         } catch (e) { /* повреждённые данные localStorage — игнорируем */ }
@@ -599,6 +607,7 @@
     // Вход / выход
     // ==========================================
     function handleLogin(model) {
+        if (loginState[model]) return; // в эту модель уже вошли
         activeModel = model;
         hideAuthMessage();
 
@@ -613,7 +622,9 @@
         }
         accessToken = null;
         currentUser = null;
+        loginState = { qwen: false, deepseek: false };
         localStorage.removeItem("ai_google_user");
+        localStorage.removeItem("ai_google_models");
         updateUI(null);
         showAuthMessage("Вы вышли из аккаунта. 🔓");
     }
@@ -628,20 +639,26 @@
         const btnQwen = document.getElementById('btnLoginQwen');
         const btnDeepSeek = document.getElementById('btnLoginDeepSeek');
 
-        if (user) {
+        const loggedInAny = loginState.qwen || loginState.deepseek;
+
+        if (user && loggedInAny) {
             statusDiv.style.display = 'flex';
             nameSpan.textContent = user.email.split('@')[0];
-            dot.classList.add('active');
-
-            // Скрываем кнопки входа, если уже вошли
-            btnQwen.style.display = 'none';
-            btnDeepSeek.style.display = 'none';
+            if (!dot.classList.contains('active')) dot.classList.add('active');
         } else {
             statusDiv.style.display = 'none';
-            // Показываем кнопки снова
-            btnQwen.style.display = 'flex';
-            btnDeepSeek.style.display = 'flex';
+            dot.classList.remove('active');
         }
+
+        // Кнопки входа — по каждой модели отдельно
+        updateLoginButton(btnQwen, 'Qwen', loginState.qwen);
+        updateLoginButton(btnDeepSeek, 'DeepSeek', loginState.deepseek);
+    }
+
+    function updateLoginButton(btn, name, loggedIn) {
+        btn.style.display = 'flex';
+        btn.disabled = loggedIn;
+        btn.textContent = loggedIn ? "✓ " + name : "🔐 " + name + " Вход";
     }
 
     function showAuthMessage(text) {
@@ -659,60 +676,105 @@
     // Запуск при загрузке страницы
     restoreSession();
 
-    // Логика отправки запросов
+    // ==========================================
+    // НАСТРОЙКИ AI-API (реальные ответы моделей)
+    // ==========================================
+    // Qwen: API-ключ DashScope (Compatible Mode) вида sk-...
+    // Получить: https://bailian.console.aliyun.com → «API-KEY» → создать ключ
+    const QWEN_API_KEY = "ВАШ_КЛЮЧ_QWEN";
+
+    // DeepSeek: API-ключ вида sk-...
+    // Получить: https://platform.deepseek.com → «API Keys» → создать ключ
+    const DEEPSEEK_API_KEY = "ВАШ_КЛЮЧ_DEEPSEEK";
+
+    // Запрос к Qwen (DashScope, OpenAI-совместимый формат)
+    async function askQwen(prompt) {
+        if (QWEN_API_KEY.indexOf("ВАШ_") !== -1) {
+            return '[Qwen Demo]\nПолучен ваш запрос: "' + prompt + '"\n\n(Для реальных ответов вставьте API-ключ Qwen — константа QWEN_API_KEY в коде)';
+        }
+        const res = await fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + QWEN_API_KEY
+            },
+            body: JSON.stringify({
+                model: "qwen-plus",
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status + ": " + (await res.text()).slice(0, 200));
+        const data = await res.json();
+        const text = data.choices && data.choices[0] && data.choices[0].message
+            ? data.choices[0].message.content
+            : "";
+        return text || "Пустой ответ от Qwen";
+    }
+
+    // Запрос к DeepSeek (OpenAI-совместимый формат)
+    async function askDeepSeek(prompt) {
+        if (DEEPSEEK_API_KEY.indexOf("ВАШ_") !== -1) {
+            return '[DeepSeek Demo]\nПолучен ваш запрос: "' + prompt + '"\n\n(Для реальных ответов вставьте API-ключ DeepSeek — константа DEEPSEEK_API_KEY в коде)';
+        }
+        const res = await fetch("https://api.deepseek.com/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + DEEPSEEK_API_KEY
+            },
+            body: JSON.stringify({
+                model: "deepseek-chat",
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status + ": " + (await res.text()).slice(0, 200));
+        const data = await res.json();
+        const text = data.choices && data.choices[0] && data.choices[0].message
+            ? data.choices[0].message.content
+            : "";
+        return text || "Пустой ответ от DeepSeek";
+    }
+
+    // ==========================================
+    // Отправка одного запроса обеим моделям
+    // ==========================================
     async function sendRequests() {
-        const inputQ = document.getElementById('inputQwen').value;
-        const inputD = document.getElementById('inputDeepSeek').value;
+        const query = document.getElementById('inputQuery').value.trim();
         const outQ = document.getElementById('textQwen');
         const outD = document.getElementById('textDeepSeek');
         const spinQ = document.getElementById('spinnerQwen');
         const spinD = document.getElementById('spinnerDeepSeek');
         const btn = document.getElementById('btnSubmit');
 
-        if (!inputQ && !inputD) {
-            alert("Введите хотя бы один запрос!");
+        if (!query) {
+            alert("Введите запрос!");
             return;
         }
 
-        // Блокируем кнопку и показываем спиннеры
+        // Блокируем кнопку и запускаем обе модели параллельно
         btn.disabled = true;
-        btn.textContent = "Обработка...";
-        
-        if (inputQ) {
-            spinQ.style.display = 'inline-block';
-            outQ.textContent = "Генерация ответа...";
-        }
-        if (inputD) {
-            spinD.style.display = 'inline-block';
-            outD.textContent = "Генерация ответа...";
-        }
+        btn.textContent = "Спрашиваю обе модели...";
+        spinQ.style.display = 'inline-block';
+        spinD.style.display = 'inline-block';
+        outQ.textContent = "Qwen думает...";
+        outD.textContent = "DeepSeek думает...";
 
-        // СИМУЛЯЦИЯ ЗАПРОСА (ЗДЕСЬ БУДЕТ РЕАЛЬНЫЙ ВЫЗОВ API)
-        // Так как у нас нет бэкенда, мы имитируем задержку и ответ
-        
-        setTimeout(() => {
-            if (inputQ) {
-                spinQ.style.display = 'none';
-                outQ.textContent = `[Qwen Demo]:\nПолучен ваш запрос: "${inputQ}"\n\n(Для реальной работы нужно подключить API ключ Qwen в коде)`;
-            }
-            if (inputD) {
-                spinD.style.display = 'none';
-                outD.textContent = `[DeepSeek Demo]:\nПолучен ваш запрос: "${inputD}"\n\n(Для реальной работы нужно подключить API ключ DeepSeek в коде)`;
-            }
-            
-            btn.disabled = false;
-            btn.textContent = "Отправить обоим моделям";
-        }, 2000);
+        const [answerQ, answerD] = await Promise.all([
+            askQwen(query).catch(err => "[Ошибка Qwen]: " + err.message),
+            askDeepSeek(query).catch(err => "[Ошибка DeepSeek]: " + err.message)
+        ]);
+
+        spinQ.style.display = 'none';
+        spinD.style.display = 'none';
+        outQ.textContent = answerQ;
+        outD.textContent = answerD;
+
+        btn.disabled = false;
+        btn.textContent = "Отправить обоим моделям";
     }
 
     // Отправка по Enter
-    document.getElementById('inputQwen').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendRequests();
-        }
-    });
-    document.getElementById('inputDeepSeek').addEventListener('keydown', function(e) {
+    document.getElementById('inputQuery').addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendRequests();
