@@ -378,21 +378,27 @@
         .repo-link a { color: var(--steam-blue); text-decoration: none; }
 
         /* ==========================================
-           ПАНЕЛЬ «ЛИМИТЫ ИИ» (счётчик запросов)
+           ПАНЕЛЬ «ЛИМИТЫ ИИ» (справа, списком)
            ========================================== */
+        .main-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        .main-row .input-section { flex: 1 1 auto; margin-bottom: 0; }
+        .main-row .quota-panel { flex: 0 0 240px; }
         .quota-panel {
             background: #0d0d0d;
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 5px;
             padding: 12px 14px;
-            margin-bottom: 20px;
         }
         .quota-head {
             display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            flex-wrap: wrap;
-            gap: 6px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
             margin-bottom: 10px;
         }
         .quota-title {
@@ -402,16 +408,16 @@
             color: var(--steam-blue);
         }
         .quota-live { font-size: 11px; color: #8f98a0; }
-        .quota-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+        .quota-list {
+            display: flex;
+            flex-direction: column;
             gap: 10px;
         }
         .quota-name {
             font-family: var(--font-fixed);
             font-size: 11px;
             color: var(--steam-text);
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -436,17 +442,19 @@
             font-family: var(--font-fixed);
             font-size: 11px;
             color: #8f98a0;
-            margin-top: 4px;
+            margin-top: 3px;
         }
         .quota-note {
             margin-top: 10px;
-            font-size: 11px;
-            line-height: 1.45;
+            font-size: 10px;
+            line-height: 1.4;
             color: #66707a;
         }
         @media (max-width: 768px) {
+            .main-row { flex-direction: column; gap: 14px; }
+            .main-row .quota-panel { flex: 1 1 auto; width: 100%; }
             .quota-panel { padding: 10px; }
-            .quota-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .quota-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
             .quota-note { font-size: 10px; }
         }
 /* ==========================================
@@ -616,36 +624,7 @@
         </div>
     </header>
 
-    <!-- Панель «ЛИМИТЫ ИИ»: сколько запросов сделано за сегодня и сколько осталось -->
-    <div class="quota-panel">
-        <div class="quota-head">
-            <span class="quota-title">ЛИМИТЫ ИИ</span>
-            <span class="quota-live" id="orQuotaInfo">OpenRouter: …</span>
-        </div>
-        <div class="quota-grid">
-            <div class="quota-item">
-                <div class="quota-name">A · GEMINI 3.6 FLASH</div>
-                <div class="quota-bar"><div class="quota-fill qfill-a" id="quotaBarA"></div></div>
-                <div class="quota-num" id="quotaNumA">0 / 250</div>
-            </div>
-            <div class="quota-item">
-                <div class="quota-name">B · GEMINI 3.5 LITE</div>
-                <div class="quota-bar"><div class="quota-fill qfill-b" id="quotaBarB"></div></div>
-                <div class="quota-num" id="quotaNumB">0 / 250</div>
-            </div>
-            <div class="quota-item">
-                <div class="quota-name">C · GEMMA 4</div>
-                <div class="quota-bar"><div class="quota-fill qfill-c" id="quotaBarC"></div></div>
-                <div class="quota-num" id="quotaNumC">0 / 50</div>
-            </div>
-            <div class="quota-item">
-                <div class="quota-name">D · NEMOTRON 3</div>
-                <div class="quota-bar"><div class="quota-fill qfill-d" id="quotaBarD"></div></div>
-                <div class="quota-num" id="quotaNumD">0 / 50</div>
-            </div>
-        </div>
-        <div class="quota-note">Счётчик — запросы за сегодня из этого браузера, обнуляется в полночь. Лимиты: A/B — дневная квота Gemini Free Tier; C/D — дневной лимит :free-моделей OpenRouter (50/день, или 1000/день при балансе от $10). Остаток = лимит минус счётчик.</div>
-    </div>
+    <div class="main-row">
 
     <!-- Секция ввода -->
     <div class="input-section">
@@ -678,6 +657,38 @@
             </div>
             <div class="api-key-saved" id="openRouterKeySaved"></div>
         </div>
+    </div>
+
+    <!-- Панель «ЛИМИТЫ ИИ» (справа, списком) -->
+    <aside class="quota-panel">
+        <div class="quota-head">
+            <span class="quota-title">ЛИМИТЫ ИИ</span>
+            <span class="quota-live" id="orQuotaInfo">…</span>
+        </div>
+        <div class="quota-list">
+            <div class="quota-item">
+                <div class="quota-name">A · GEMINI 3.6</div>
+                <div class="quota-bar"><div class="quota-fill qfill-a" id="quotaBarA"></div></div>
+                <div class="quota-num" id="quotaNumA">0 / 250</div>
+            </div>
+            <div class="quota-item">
+                <div class="quota-name">B · GEMINI 3.5 LITE</div>
+                <div class="quota-bar"><div class="quota-fill qfill-b" id="quotaBarB"></div></div>
+                <div class="quota-num" id="quotaNumB">0 / 250</div>
+            </div>
+            <div class="quota-item">
+                <div class="quota-name">C · GEMMA 4</div>
+                <div class="quota-bar"><div class="quota-fill qfill-c" id="quotaBarC"></div></div>
+                <div class="quota-num" id="quotaNumC">0 / 50</div>
+            </div>
+            <div class="quota-item">
+                <div class="quota-name">D · NEMOTRON 3</div>
+                <div class="quota-bar"><div class="quota-fill qfill-d" id="quotaBarD"></div></div>
+                <div class="quota-num" id="quotaNumD">0 / 50</div>
+            </div>
+        </div>
+        <div class="quota-note">Запросы за сегодня · сброс в полночь</div>
+    </aside>
     </div>
 
     <!-- Кнопка действия -->
@@ -1260,11 +1271,11 @@
             const d = (data && data.data) || {};
             const rl = d.rate_limit || {};
             const rpm = (rl.requests && rl.requests > 0) ? (rl.requests + " запр./" + (rl.interval || "мин")) : "";
-            const spent = (typeof d.usage === "number") ? ("потрачено $" + d.usage.toFixed(4)) : "";
+            const spent = (typeof d.usage === "number") ? ("$" + d.usage.toFixed(4)) : "";
             const daily = (d.is_free_tier === false) ? 1000 : 50;
             quotaDaily.C = daily;
             quotaDaily.D = daily;
-            el.textContent = "OpenRouter · " + [rpm, spent, daily + " :free-запросов/день"].filter(Boolean).join(" · ");
+            el.textContent = "OpenRouter · " + [rpm, spent, daily + "/день"].filter(Boolean).join(" · ");
             renderQuota();
         } catch (e) {
             el.textContent = "OpenRouter · данные лимитов недоступны";
