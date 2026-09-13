@@ -450,6 +450,25 @@
             line-height: 1.4;
             color: #66707a;
         }
+        .qfill-cline { background: #e05d44; }
+        .cline-input {
+            margin-top: 5px;
+            width: 100%;
+            background: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: white;
+            padding: 4px 6px;
+            border-radius: 3px;
+            font-family: var(--font-fixed);
+            font-size: 11px;
+            box-sizing: border-box;
+        }
+        .cline-input:focus {
+            outline: none;
+            border-color: var(--steam-blue);
+        }
+        .cline-input::-webkit-outer-spin-button,
+        .cline-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         @media (max-width: 768px) {
             .main-row { flex-direction: column; gap: 14px; }
             .main-row .quota-panel { flex: 1 1 auto; width: 100%; }
@@ -686,8 +705,14 @@
                 <div class="quota-bar"><div class="quota-fill qfill-d" id="quotaBarD"></div></div>
                 <div class="quota-num" id="quotaNumD">0 / 50</div>
             </div>
+            <div class="quota-item">
+                <div class="quota-name">CLINE · ТОКЕНЫ</div>
+                <div class="quota-bar"><div class="quota-fill qfill-cline" id="quotaBarCline"></div></div>
+                <div class="quota-num" id="quotaNumCline">0 / 1M</div>
+                <input type="number" min="0" step="1000" class="cline-input" id="clineTokensInput" placeholder="введите токены" title="Сколько токенов Cline потратил сегодня (ввод вручную)">
+            </div>
         </div>
-        <div class="quota-note">Запросы за сегодня · сброс в полночь</div>
+        <div class="quota-note">Запросы за сегодня · сброс в полночь · Cline — вручную</div>
     </aside>
     </div>
 
@@ -1214,8 +1239,14 @@
     // Показывает, сколько запросов каждая модель сделала за сегодня
     // из этого браузера и сколько осталось до дневного лимита.
     const QUOTA_STORAGE = "ai_quota_counters";
-    const QUOTA_DAILY_DEFAULT = { A: 250, B: 250, C: 50, D: 50 };
+    const QUOTA_DAILY_DEFAULT = { A: 250, B: 250, C: 50, D: 50, CLINE: 1000000 };
     const quotaDaily = Object.assign({}, QUOTA_DAILY_DEFAULT);
+
+    function fmtTokens(n) {
+        if (n >= 1000000) return (n % 1000000 ? (n / 1000000).toFixed(1) : n / 1000000) + "M";
+        if (n >= 1000) return (n % 1000 ? (n / 1000).toFixed(1) : n / 1000) + "k";
+        return String(n);
+    }
 
     function quotaTodayKey() {
         const d = new Date();
@@ -1226,7 +1257,7 @@
         let q = null;
         try { q = JSON.parse(localStorage.getItem(QUOTA_STORAGE) || "null"); } catch (e) { q = null; }
         if (!q || typeof q !== "object" || q.date !== quotaTodayKey()) {
-            q = { date: quotaTodayKey(), A: 0, B: 0, C: 0, D: 0 };
+            q = { date: quotaTodayKey(), A: 0, B: 0, C: 0, D: 0, CLINE: 0 };
         }
         return q;
     }
@@ -1244,7 +1275,8 @@
             A: ["quotaBarA", "quotaNumA"],
             B: ["quotaBarB", "quotaNumB"],
             C: ["quotaBarC", "quotaNumC"],
-            D: ["quotaBarD", "quotaNumD"]
+            D: ["quotaBarD", "quotaNumD"],
+            CLINE: ["quotaBarCline", "quotaNumCline"]
         };
         Object.keys(ids).forEach(function (letter) {
             const used = q[letter] || 0;
@@ -1252,8 +1284,33 @@
             const bar = document.getElementById(ids[letter][0]);
             const num = document.getElementById(ids[letter][1]);
             if (bar) bar.style.width = Math.min(100, (used / max) * 100) + "%";
-            if (num) num.textContent = used + " / " + max + (used >= max ? " — лимит!" : "");
+            if (num) {
+                // Строка Cline — счёт в токенах (компактный формат: 12.5k / 1M)
+                if (letter === "CLINE") {
+                    num.textContent = fmtTokens(used) + " / " + fmtTokens(max) + (used >= max ? " — лимит!" : "");
+                } else {
+                    num.textContent = used + " / " + max + (used >= max ? " — лимит!" : "");
+                }
+            }
         });
+    }
+
+    // Ручной ввод токенов Cline (страница не видит расход расширения в VS Code)
+    function initClineInput() {
+        const input = document.getElementById("clineTokensInput");
+        if (!input) return;
+        input.value = loadQuota().CLINE || "";
+        input.addEventListener("input", function () {
+            const v = parseInt(input.value, 10);
+            setQuotaCline(isNaN(v) || v < 0 ? 0 : v);
+        });
+    }
+
+    function setQuotaCline(tokens) {
+        const q = loadQuota();
+        q.CLINE = tokens;
+        try { localStorage.setItem(QUOTA_STORAGE, JSON.stringify(q)); } catch (e) { /* нет localStorage */ }
+        renderQuota();
     }
 
     // Живые данные по ключу OpenRouter: лимит запросов/мин, потрачено, дневной лимит
@@ -1286,6 +1343,7 @@
     restoreGeminiKey();
     restoreOpenRouterKey();
     renderQuota();
+    initClineInput();
     fetchOpenRouterInfo();
 </script>
 
