@@ -329,12 +329,63 @@
 
         .response-card h3 {
             font-family: var(--font-fixed);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
             margin-top: 0;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             padding-bottom: 8px;
             margin-bottom: 10px;
             font-size: 14px;
         }
+
+        /* Кнопка разворачивания окна ответа */
+        .btn-expand {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: var(--steam-text);
+            width: 26px;
+            height: 26px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            flex: 0 0 auto;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .btn-expand:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.45);
+        }
+        .ico-expand {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+            display: block;
+        }
+
+        /* Развёрнутое (полноэкранное) окно ответа */
+        .response-card.expanded {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            min-height: 0;
+            max-height: none;
+            border-radius: 0;
+            padding: 16px;
+            overflow: hidden;
+        }
+        .response-card.expanded .response-content {
+            max-height: none;
+            flex: 1 1 auto;
+        }
+        body.card-expanded { overflow: hidden; }
 
         .response-content {
             line-height: 1.5;
@@ -1230,6 +1281,50 @@
             sendRequests();
         }
     });
+
+    // ==========================================
+    // РАЗВОРАЧИВАНИЕ ОКОН ОТВЕТОВ
+    // ==========================================
+    // Кнопка в шапке карточки разворачивает её на весь экран,
+    // внутри окна ответ свободно прокручивается. Escape — свернуть.
+    const SVG_EXPAND = '<svg class="ico-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zM4 14h2v4h4v2H4v-6zm16 0v6h-6v-2h4v-4h2z"/></svg>';
+    const SVG_CLOSE = '<svg class="ico-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4 6.4 5z"/></svg>';
+
+    function collapseAllExpanded() {
+        document.querySelectorAll('.response-card.expanded').forEach(function (card) {
+            card.classList.remove('expanded');
+            const b = card.querySelector('.btn-expand');
+            if (b) { b.innerHTML = SVG_EXPAND; b.title = 'Развернуть окно'; }
+        });
+        document.body.classList.remove('card-expanded');
+    }
+
+    function toggleExpand(btn) {
+        const card = btn.closest('.response-card');
+        if (card.classList.contains('expanded')) { collapseAllExpanded(); return; }
+        collapseAllExpanded();
+        card.classList.add('expanded');
+        btn.innerHTML = SVG_CLOSE;
+        btn.title = 'Свернуть окно';
+        document.body.classList.add('card-expanded');
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') collapseAllExpanded();
+    });
+
+    // Добавляем кнопку разворачивания в шапку каждой карточки
+    (function () {
+        document.querySelectorAll('.response-card h3').forEach(function (h) {
+            const btn = document.createElement('button');
+            btn.className = 'btn-expand';
+            btn.type = 'button';
+            btn.title = 'Развернуть окно';
+            btn.innerHTML = SVG_EXPAND;
+            btn.setAttribute('onclick', 'toggleExpand(this)');
+            h.appendChild(btn);
+        });
+    })();
 
     // ==========================================
     // СЧЁТЧИК ЛИМИТОВ (панель «ЛИМИТЫ ИИ»)
