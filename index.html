@@ -893,15 +893,17 @@
     // обновление ключа → btoa("sk-or-v1-...") → вставить строку в константу ниже.
     // СВОЙ ключ из поля на странице (localStorage) имеет приоритет над встроенным.
     // Свой ключ: https://openrouter.ai/keys → «Create Key» (бесплатно).
-    const OPENROUTER_API_KEY_B64 = "";
+    const OPENROUTER_API_KEY_B64 = "c2stb3ItdjEtZDIzMmQyOTY2M2ZlOWJmMDQxMGMzZTdjYWMxMTA2ZGM4NmE4MmQyZjI3OGM5ODY3YTI1NGVkZDNkYzI0NDExZQ==";
     const OPENROUTER_API_KEY = (() => {
         try { return OPENROUTER_API_KEY_B64 ? atob(OPENROUTER_API_KEY_B64).trim() : ""; }
         catch (e) { return ""; }
     })();
 
-    // Бесплатные модели OpenRouter (актуальны на 2026, каталог проверен):
-    const OPENROUTER_MODEL_C = "google/gemma-4-26b-a4b-it:free";
-    const OPENROUTER_MODEL_D = "nvidia/nemotron-3-super-120b-a12b:free";
+    // Бесплатные модели OpenRouter (актуальны на 2026, каталог проверен).
+    // Модели заданы ЦЕПОЧКАМИ: при 429 (общий пул провайдера перегружен)
+    // запрос автоматически повторяется на следующей модели списка.
+    const OPENROUTER_MODEL_C = ["google/gemma-4-26b-a4b-it:free", "google/gemma-4-31b-it:free"];
+    const OPENROUTER_MODEL_D = ["nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3.5-lightning:free"];
 
     const OPENROUTER_KEY_STORAGE = "ai_openrouter_key";
 
@@ -985,14 +987,27 @@
         return text || "Пустой ответ";
     }
 
-    // Панель C — Gemma 4 (OpenRouter, бесплатно)
+    // Панель C — Gemma 4 (OpenRouter, бесплатно, с fallback-моделью)
     async function askGemma(prompt) {
-        return askOpenRouter(prompt, OPENROUTER_MODEL_C);
+        return askOpenRouterAny(prompt, OPENROUTER_MODEL_C);
     }
 
-    // Панель D — Nemotron 3 (OpenRouter, бесплатно)
+    // Панель D — Nemotron 3 (OpenRouter, бесплатно, с fallback-моделью)
     async function askNemotron(prompt) {
-        return askOpenRouter(prompt, OPENROUTER_MODEL_D);
+        return askOpenRouterAny(prompt, OPENROUTER_MODEL_D);
+    }
+
+    // Пробует модели по очереди (полезно при 429 на «:free» моделях)
+    async function askOpenRouterAny(prompt, models) {
+        let lastErr = null;
+        for (let i = 0; i < models.length; i++) {
+            try {
+                return await askOpenRouter(prompt, models[i]);
+            } catch (e) {
+                lastErr = e;
+            }
+        }
+        throw lastErr;
     }
 
     // ==========================================
