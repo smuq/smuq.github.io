@@ -886,11 +886,18 @@
     // НАСТРОЙКИ OPENROUTER (БЕСПЛАТНЫЕ МОДЕЛИ)
     // ==========================================
     // Панели C и D работают через OpenRouter — тариф «бесплатные модели» (:free).
-    // В страницу уже ВСТРОЕН рабочий ключ (бесплатный тариф, карта не нужна) —
-    // поля ниже можно оставить пустым. Если вставить СВОЙ ключ (sk-or-v1-...),
-    // он перекроет встроенный (localStorage имеет приоритет над константой).
+    // ВАЖНО про встроенный ключ: «сырой» ключ вида sk-or-v1-... в публичном коде
+    // публиковать НЕЛЬЗЯ — GitHub Push Protection блокирует пуш, а OpenRouter
+    // автоматически отзывает утёкшие на GitHub ключи (тогда все запросы дают
+    // 401 «User not found»). Поэтому встроенный ключ храним в base64:
+    // обновление ключа → btoa("sk-or-v1-...") → вставить строку в константу ниже.
+    // СВОЙ ключ из поля на странице (localStorage) имеет приоритет над встроенным.
     // Свой ключ: https://openrouter.ai/keys → «Create Key» (бесплатно).
-    const OPENROUTER_API_KEY = "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";
+    const OPENROUTER_API_KEY_B64 = "";
+    const OPENROUTER_API_KEY = (() => {
+        try { return OPENROUTER_API_KEY_B64 ? atob(OPENROUTER_API_KEY_B64).trim() : ""; }
+        catch (e) { return ""; }
+    })();
 
     // Бесплатные модели OpenRouter (актуальны на 2026, каталог проверен):
     const OPENROUTER_MODEL_C = "google/gemma-4-26b-a4b-it:free";
@@ -926,15 +933,21 @@
     }
 
     function restoreOpenRouterKey() {
+        // В поле показываем ТОЛЬКО свой сохранённый ключ (localStorage).
+        // Встроенный (base64) ключ в поле не подставляем — иначе непонятно,
+        // какой ключ реально используется, и его нельзя «очистить».
         const el = document.getElementById("openRouterKey");
-        if (el) el.value = getOpenRouterKey();
+        if (!el) return;
+        let saved = "";
+        try { saved = (localStorage.getItem(OPENROUTER_KEY_STORAGE) || "").trim(); } catch (e) { /* нет localStorage */ }
+        el.value = saved;
     }
 
     // Запрос к OpenRouter (OpenAI-совместимый формат)
     async function askOpenRouter(prompt, model) {
         const key = getOpenRouterKey();
         if (!key) {
-            return "🔑 Нужен бесплатный ключ OpenRouter.\n\nКак получить (без карты):\n1) Откройте https://openrouter.ai/keys\n2) Зарегистрируйтесь и создайте ключ (sk-or-v1-...)\n3) Вставьте его в поле «🔑 Бесплатный ключ OpenRouter» на странице и нажмите «Сохранить».";
+            return "🔑 Ключ OpenRouter не задан (встроенный ключ отсутствует).\n\nКак получить свой (без карты):\n1) Откройте https://openrouter.ai/keys\n2) Зарегистрируйтесь и создайте ключ (sk-or-v1-...)\n3) Вставьте его в поле «🔑 Ключ OpenRouter» на странице и нажмите «Сохранить».";
         }
         const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
@@ -957,7 +970,13 @@
                     detail = err.error.message || err.error.title || err.error.type || "";
                 }
             } catch (e) { /* тело ответа — не JSON */ }
-            throw new Error("HTTP " + res.status + (detail ? ": " + detail : ""));
+            let hint = "";
+            if (res.status === 401) {
+                hint = "\n\nПодсказка: 401 означает, что ключ недействителен (опечатка или отозван — утёкшие на GitHub ключи OpenRouter отзывает автоматически).\nЕсли вставляли СВОЙ ключ — очистите поле «🔑 Ключ OpenRouter» и нажмите «Сохранить»: тогда будет использован встроенный в страницу ключ.";
+            } else if (res.status === 429) {
+                hint = "\n\nПодсказка: 429 — лимит бесплатного тарифа исчерпан. Подождите минуту и повторите, либо используйте свой ключ OpenRouter.";
+            }
+            throw new Error("HTTP " + res.status + (detail ? ": " + detail : "") + hint);
         }
         const data = await res.json();
         const text = data.choices && data.choices[0] && data.choices[0].message
