@@ -181,6 +181,60 @@
         .badge.deepseek { background-color: var(--deepseek-color); color: white; }
         .badge.shared { background-color: var(--steam-blue); color: #1b2838; }
 
+        /* Поле бесплатного ключа Gemini */
+        .api-key-label {
+            display: block;
+            margin: 12px 0 6px;
+            font-size: 13px;
+            color: var(--steam-text);
+            opacity: 0.9;
+        }
+        .api-key-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .api-key-input {
+            flex: 1 1 260px;
+            min-width: 0;
+            background: #101820;
+            border: 1px solid #3a4b5e;
+            color: white;
+            padding: 8px 10px;
+            border-radius: 3px;
+            font-family: inherit;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .api-key-input:focus {
+            outline: none;
+            border-color: var(--steam-blue);
+        }
+        .btn-save {
+            background: linear-gradient(to bottom, #47bfff 5%, #1a44c2 60%);
+            border: none;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .btn-save:hover { filter: brightness(1.2); }
+        .api-key-hint {
+            margin-top: 6px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #8f98a0;
+        }
+        .api-key-hint a { color: var(--steam-blue); }
+        .api-key-saved {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #a4d007;
+            min-height: 16px;
+        }
+
         textarea {
             width: 100%;
             height: 80px;
@@ -438,10 +492,10 @@
         <div class="auth-container">
             <!-- Кнопки входа -->
             <button id="btnLoginQwen" class="btn-auth qwen" onclick="handleLogin('qwen')">
-                🔐 Qwen Вход
+                🔐 Вход (A)
             </button>
             <button id="btnLoginDeepSeek" class="btn-auth deepseek" onclick="handleLogin('deepseek')">
-                🔐 DeepSeek Вход
+                🔐 Вход (B)
             </button>
 
             <!-- Статус пользователя (скрыт по умолчанию) -->
@@ -463,7 +517,17 @@
                 <span class="badge shared">ЗАПРОС</span>
                 Один запрос — обеим моделям
             </div>
-            <textarea id="inputQuery" placeholder="Введите сообщение — оно уйдёт и Qwen, и DeepSeek (Enter для отправки)"></textarea>
+            <textarea id="inputQuery" placeholder="Введите сообщение — оно уйдёт обеим моделям Gemini (Enter для отправки)"></textarea>
+            <label class="api-key-label" for="geminiKey">🔑 Бесплатный ключ Google Gemini (без карты):</label>
+            <div class="api-key-row">
+                <input type="password" id="geminiKey" class="api-key-input" autocomplete="off" spellcheck="false" placeholder="Вставьте ключ вида AIzaSy...">
+                <button type="button" class="btn-save" onclick="saveGeminiKey()">Сохранить</button>
+            </div>
+            <div class="api-key-hint">
+                Ключ бесплатный: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> → «Create API key».
+                Карта не нужна. Ключ хранится только в вашем браузере (localStorage).
+            </div>
+            <div class="api-key-saved" id="apiKeySaved"></div>
         </div>
     </div>
 
@@ -477,7 +541,7 @@
     <!-- Секция вывода -->
     <div class="output-grid">
         <div class="response-card">
-            <h3><span class="badge qwen">QWEN</span> Ответ</h3>
+            <h3><span class="badge qwen">GEMINI 3.6 FLASH</span> Ответ A</h3>
             <div class="response-content" id="outputQwen">
                 <span class="loading-spinner" id="spinnerQwen"></span>
                 <span id="textQwen">Ожидание запроса...</span>
@@ -485,7 +549,7 @@
         </div>
 
         <div class="response-card">
-            <h3><span class="badge deepseek">DEEPSEEK</span> Ответ</h3>
+            <h3><span class="badge deepseek">GEMINI 3.5 FLASH-LITE</span> Ответ B</h3>
             <div class="response-content" id="outputDeepSeek">
                 <span class="loading-spinner" id="spinnerDeepSeek"></span>
                 <span id="textDeepSeek">Ожидание запроса...</span>
@@ -651,8 +715,8 @@
         }
 
         // Кнопки входа — по каждой модели отдельно
-        updateLoginButton(btnQwen, 'Qwen', loginState.qwen);
-        updateLoginButton(btnDeepSeek, 'DeepSeek', loginState.deepseek);
+        updateLoginButton(btnQwen, 'A', loginState.qwen);
+        updateLoginButton(btnDeepSeek, 'B', loginState.deepseek);
     }
 
     function updateLoginButton(btn, name, loggedIn) {
@@ -677,62 +741,98 @@
     restoreSession();
 
     // ==========================================
-    // НАСТРОЙКИ AI-API (реальные ответы моделей)
+    // НАСТРОЙКИ AI-API (БЕСПЛАТНО, без карты)
     // ==========================================
-    // Qwen: API-ключ DashScope (Compatible Mode) вида sk-...
-    // Получить: https://bailian.console.aliyun.com → «API-KEY» → создать ключ
-    const QWEN_API_KEY = "ВАШ_КЛЮЧ_QWEN";
+    // Панели больше не используют платные ключи Qwen (DashScope) и DeepSeek.
+    // Вместо них — Google Gemini с бесплатным тарифом (Free Tier).
+    // Ключ НЕ хранится в коде: вставьте его на странице в поле
+    // «🔑 Бесплатный ключ Google Gemini» (сохранится в браузере, localStorage).
+    // Получить ключ: https://aistudio.google.com/apikey
+    const GEMINI_API_KEY = "";
 
-    // DeepSeek: API-ключ вида sk-...
-    // Получить: https://platform.deepseek.com → «API Keys» → создать ключ
-    const DEEPSEEK_API_KEY = "ВАШ_КЛЮЧ_DEEPSEEK";
+    // Модели панелей «A» и «B» (проверены живыми запросами с этим ключом):
+    const GEMINI_MODEL_A = "gemini-3.6-flash";
+    const GEMINI_MODEL_B = "gemini-3.5-flash-lite";
 
-    // Запрос к Qwen (DashScope, OpenAI-совместимый формат)
-    async function askQwen(prompt) {
-        if (QWEN_API_KEY.indexOf("ВАШ_") !== -1) {
-            return '[Qwen Demo]\nПолучен ваш запрос: "' + prompt + '"\n\n(Для реальных ответов вставьте API-ключ Qwen — константа QWEN_API_KEY в коде)';
-        }
-        const res = await fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + QWEN_API_KEY
-            },
-            body: JSON.stringify({
-                model: "qwen-plus",
-                messages: [{ role: "user", content: prompt }]
-            })
-        });
-        if (!res.ok) throw new Error("HTTP " + res.status + ": " + (await res.text()).slice(0, 200));
-        const data = await res.json();
-        const text = data.choices && data.choices[0] && data.choices[0].message
-            ? data.choices[0].message.content
-            : "";
-        return text || "Пустой ответ от Qwen";
+    const GEMINI_KEY_STORAGE = "ai_gemini_key";
+
+    // Ключ, сохранённый в браузере, имеет приоритет над константой
+    function getGeminiKey() {
+        try {
+            const saved = (localStorage.getItem(GEMINI_KEY_STORAGE) || "").trim();
+            if (saved) return saved;
+        } catch (e) { /* localStorage может быть недоступен */ }
+        return GEMINI_API_KEY;
     }
 
-    // Запрос к DeepSeek (OpenAI-совместимый формат)
-    async function askDeepSeek(prompt) {
-        if (DEEPSEEK_API_KEY.indexOf("ВАШ_") !== -1) {
-            return '[DeepSeek Demo]\nПолучен ваш запрос: "' + prompt + '"\n\n(Для реальных ответов вставьте API-ключ DeepSeek — константа DEEPSEEK_API_KEY в коде)';
+    // Кнопка «Сохранить» в поле ввода ключа
+    function saveGeminiKey() {
+        const el = document.getElementById("geminiKey");
+        const savedEl = document.getElementById("apiKeySaved");
+        if (!el || !savedEl) return;
+        const key = el.value.trim();
+        try {
+            if (key) {
+                localStorage.setItem(GEMINI_KEY_STORAGE, key);
+                el.value = key;
+                savedEl.textContent = "✓ Ключ сохранён в этом браузере.";
+            } else {
+                localStorage.removeItem(GEMINI_KEY_STORAGE);
+                savedEl.textContent = "Ключ удалён.";
+            }
+        } catch (e) {
+            savedEl.textContent = "⚠️ Не удалось сохранить ключ (localStorage недоступен).";
         }
-        const res = await fetch("https://api.deepseek.com/chat/completions", {
+    }
+
+    // Заполняем поле ключа при загрузке страницы
+    function restoreGeminiKey() {
+        const el = document.getElementById("geminiKey");
+        if (el) el.value = getGeminiKey();
+    }
+
+    // Универсальный запрос к Google Gemini (бесплатный тариф)
+    async function askGemini(prompt, model) {
+        const key = getGeminiKey();
+        if (!key || key.indexOf("ВАШ_") !== -1) {
+            return "🔑 Нужен бесплатный ключ Gemini.\n\nКак получить (без карты):\n1) Откройте https://aistudio.google.com/apikey\n2) Нажмите «Create API key»\n3) Вставьте ключ в поле «🔑 Бесплатный ключ Google Gemini» на странице и нажмите «Сохранить».";
+        }
+        const url = "https://generativelanguage.googleapis.com/v1beta/models/"
+            + encodeURIComponent(model)
+            + ":generateContent?key=" + encodeURIComponent(key);
+        const res = await fetch(url, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + DEEPSEEK_API_KEY
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                model: "deepseek-chat",
-                messages: [{ role: "user", content: prompt }]
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
             })
         });
-        if (!res.ok) throw new Error("HTTP " + res.status + ": " + (await res.text()).slice(0, 200));
+        if (!res.ok) {
+            let detail = "";
+            try {
+                const err = await res.json();
+                detail = (err && err.error && err.error.message) || "";
+            } catch (e) { /* тело ответа — не JSON */ }
+            throw new Error("HTTP " + res.status + (detail ? ": " + detail : ""));
+        }
         const data = await res.json();
-        const text = data.choices && data.choices[0] && data.choices[0].message
-            ? data.choices[0].message.content
-            : "";
-        return text || "Пустой ответ от DeepSeek";
+        const parts = data.candidates
+            && data.candidates[0]
+            && data.candidates[0].content
+            && data.candidates[0].content.parts;
+        const text = Array.isArray(parts) ? parts.map(p => (p && p.text) || "").join("") : "";
+        return text || "Пустой ответ от Gemini";
+    }
+
+    // Панель A — Gemini 3.6 Flash
+    async function askQwen(prompt) {
+        return askGemini(prompt, GEMINI_MODEL_A);
+    }
+
+    // Панель B — Gemini 3.5 Flash-Lite
+    async function askDeepSeek(prompt) {
+        return askGemini(prompt, GEMINI_MODEL_B);
     }
 
     // ==========================================
@@ -756,12 +856,12 @@
         btn.textContent = "Спрашиваю обе модели...";
         spinQ.style.display = 'inline-block';
         spinD.style.display = 'inline-block';
-        outQ.textContent = "Qwen думает...";
-        outD.textContent = "DeepSeek думает...";
+        outQ.textContent = "Gemini 3.6 Flash думает...";
+        outD.textContent = "Gemini 3.5 Flash-Lite думает...";
 
         const [answerQ, answerD] = await Promise.all([
-            askQwen(query).catch(err => "[Ошибка Qwen]: " + err.message),
-            askDeepSeek(query).catch(err => "[Ошибка DeepSeek]: " + err.message)
+            askQwen(query).catch(err => "[Ошибка A (Gemini 3.6 Flash)]: " + err.message),
+            askDeepSeek(query).catch(err => "[Ошибка B (Gemini 3.5 Flash-Lite)]: " + err.message)
         ]);
 
         spinQ.style.display = 'none';
@@ -780,6 +880,9 @@
             sendRequests();
         }
     });
+
+    // Заполняем сохранённый ключ Gemini при загрузке
+    restoreGeminiKey();
 </script>
 
 </body>
