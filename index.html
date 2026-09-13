@@ -18,6 +18,8 @@
             --steam-green-hover: #4c6b22;
             --qwen-color: #ff9d00;
             --deepseek-color: #007bff;
+            --gemma-color: #b06bff;
+            --nemotron-color: #0aa084;
         }
 
         body {
@@ -180,6 +182,8 @@
         .badge.qwen { background-color: var(--qwen-color); }
         .badge.deepseek { background-color: var(--deepseek-color); color: white; }
         .badge.shared { background-color: var(--steam-blue); color: #1b2838; }
+        .badge.gemma { background-color: var(--gemma-color); color: white; }
+        .badge.nemotron { background-color: var(--nemotron-color); color: white; }
 
         /* Поле бесплатного ключа Gemini */
         .api-key-label {
@@ -306,23 +310,37 @@
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid #3a4b5e;
             border-radius: 5px;
-            padding: 20px;
-            min-height: 200px;
+            padding: 14px;
+            min-height: 170px;
+            display: flex;
+            flex-direction: column;
             position: relative;
         }
 
         .response-card h3 {
             margin-top: 0;
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 10px;
-            font-size: 16px;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
         }
 
         .response-content {
-            line-height: 1.6;
-            font-size: 14px;
+            line-height: 1.5;
+            font-size: 13px;
             white-space: pre-wrap;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            max-height: 420px;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 4px;
         }
+
+        /* Тонкий скроллбар окна ответа */
+        .response-content::-webkit-scrollbar { width: 6px; }
+        .response-content::-webkit-scrollbar-thumb { background: #3a4b5e; border-radius: 3px; }
+        .response-content::-webkit-scrollbar-track { background: transparent; }
 
         .loading-spinner {
             display: inline-block;
@@ -452,12 +470,13 @@
             }
 
             .response-card {
-                min-height: 120px;
-                padding: 14px;
+                min-height: 140px;
+                padding: 12px;
             }
 
             .response-content {
-                font-size: 14px;
+                font-size: 13px;
+                max-height: 320px;
             }
 
             .repo-link {
@@ -515,12 +534,12 @@
         <div class="model-input-group shared">
             <div class="model-label">
                 <span class="badge shared">ЗАПРОС</span>
-                Один запрос — обеим моделям
+                Один запрос — четырём моделям
             </div>
-            <textarea id="inputQuery" placeholder="Введите сообщение — оно уйдёт обеим моделям Gemini (Enter для отправки)"></textarea>
+            <textarea id="inputQuery" placeholder="Введите сообщение — оно уйдёт всем 4 моделям (Enter для отправки)"></textarea>
             <label class="api-key-label" for="geminiKey">🔑 Бесплатный ключ Google Gemini (без карты):</label>
             <div class="api-key-row">
-                <input type="password" id="geminiKey" class="api-key-input" autocomplete="off" spellcheck="false" placeholder="Вставьте ключ вида AIzaSy...">
+                <input type="password" id="geminiKey" class="api-key-input" autocomplete="off" spellcheck="false" placeholder="Вставьте ключ вида AIzaSy... или AQ...">
                 <button type="button" class="btn-save" onclick="saveGeminiKey()">Сохранить</button>
             </div>
             <div class="api-key-hint">
@@ -528,13 +547,24 @@
                 Карта не нужна. Ключ хранится только в вашем браузере (localStorage).
             </div>
             <div class="api-key-saved" id="apiKeySaved"></div>
+
+            <label class="api-key-label" for="openRouterKey">🔑 Бесплатный ключ OpenRouter (для панелей C и D):</label>
+            <div class="api-key-row">
+                <input type="password" id="openRouterKey" class="api-key-input" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-...">
+                <button type="button" class="btn-save" onclick="saveOpenRouterKey()">Сохранить</button>
+            </div>
+            <div class="api-key-hint">
+                Бесплатно: <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> → «Create Key».
+                Карта не нужна. Ключ хранится только в вашем браузере (localStorage).
+            </div>
+            <div class="api-key-saved" id="openRouterKeySaved"></div>
         </div>
     </div>
 
     <!-- Кнопка действия -->
     <div class="action-area">
         <button id="btnSubmit" class="btn-submit" onclick="sendRequests()">
-            Отправить обоим моделям
+            Отправить всем моделям
         </button>
     </div>
 
@@ -553,6 +583,22 @@
             <div class="response-content" id="outputDeepSeek">
                 <span class="loading-spinner" id="spinnerDeepSeek"></span>
                 <span id="textDeepSeek">Ожидание запроса...</span>
+            </div>
+        </div>
+
+        <div class="response-card">
+            <h3><span class="badge gemma">GEMMA 4</span> Ответ C</h3>
+            <div class="response-content" id="outputGemma">
+                <span class="loading-spinner" id="spinnerGemma"></span>
+                <span id="textGemma">Ожидание запроса...</span>
+            </div>
+        </div>
+
+        <div class="response-card">
+            <h3><span class="badge nemotron">NEMOTRON 3</span> Ответ D</h3>
+            <div class="response-content" id="outputNemotron">
+                <span class="loading-spinner" id="spinnerNemotron"></span>
+                <span id="textNemotron">Ожидание запроса...</span>
             </div>
         </div>
     </div>
@@ -836,14 +882,112 @@
     }
 
     // ==========================================
-    // Отправка одного запроса обеим моделям
+    // НАСТРОЙКИ OPENROUTER (БЕСПЛАТНЫЕ МОДЕЛИ)
+    // ==========================================
+    // Панели C и D работают через OpenRouter — тариф «бесплатные модели» (:free).
+    // Ключ OpenRouter тоже бесплатный, карта НЕ нужна:
+    //   1) Откройте https://openrouter.ai/keys
+    //   2) Зарегистрируйтесь (Sign up) и создайте ключ (sk-or-v1-...)
+    //   3) Вставьте ключ в поле «🔑 Бесплатный ключ OpenRouter» на странице.
+    const OPENROUTER_API_KEY = "";
+
+    // Бесплатные модели OpenRouter (актуальны на 2026, каталог проверен):
+    const OPENROUTER_MODEL_C = "google/gemma-4-26b-a4b-it:free";
+    const OPENROUTER_MODEL_D = "nvidia/nemotron-3-super-120b-a12b:free";
+
+    const OPENROUTER_KEY_STORAGE = "ai_openrouter_key";
+
+    function getOpenRouterKey() {
+        try {
+            const saved = (localStorage.getItem(OPENROUTER_KEY_STORAGE) || "").trim();
+            if (saved) return saved;
+        } catch (e) { /* localStorage может быть недоступен */ }
+        return OPENROUTER_API_KEY;
+    }
+
+    function saveOpenRouterKey() {
+        const el = document.getElementById("openRouterKey");
+        const savedEl = document.getElementById("openRouterKeySaved");
+        if (!el || !savedEl) return;
+        const key = el.value.trim();
+        try {
+            if (key) {
+                localStorage.setItem(OPENROUTER_KEY_STORAGE, key);
+                el.value = key;
+                savedEl.textContent = "✓ Ключ сохранён в этом браузере.";
+            } else {
+                localStorage.removeItem(OPENROUTER_KEY_STORAGE);
+                savedEl.textContent = "Ключ удалён.";
+            }
+        } catch (e) {
+            savedEl.textContent = "⚠️ Не удалось сохранить ключ (localStorage недоступен).";
+        }
+    }
+
+    function restoreOpenRouterKey() {
+        const el = document.getElementById("openRouterKey");
+        if (el) el.value = getOpenRouterKey();
+    }
+
+    // Запрос к OpenRouter (OpenAI-совместимый формат)
+    async function askOpenRouter(prompt, model) {
+        const key = getOpenRouterKey();
+        if (!key) {
+            return "🔑 Нужен бесплатный ключ OpenRouter.\n\nКак получить (без карты):\n1) Откройте https://openrouter.ai/keys\n2) Зарегистрируйтесь и создайте ключ (sk-or-v1-...)\n3) Вставьте его в поле «🔑 Бесплатный ключ OpenRouter» на странице и нажмите «Сохранить».";
+        }
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + key,
+                "HTTP-Referer": "https://smuq.github.io",
+                "X-Title": "AI Duo"
+            },
+            body: JSON.stringify({
+                model: model,
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
+        if (!res.ok) {
+            let detail = "";
+            try {
+                const err = await res.json();
+                if (err && err.error) {
+                    detail = err.error.message || err.error.title || err.error.type || "";
+                }
+            } catch (e) { /* тело ответа — не JSON */ }
+            throw new Error("HTTP " + res.status + (detail ? ": " + detail : ""));
+        }
+        const data = await res.json();
+        const text = data.choices && data.choices[0] && data.choices[0].message
+            ? data.choices[0].message.content
+            : "";
+        return text || "Пустой ответ";
+    }
+
+    // Панель C — Gemma 4 (OpenRouter, бесплатно)
+    async function askGemma(prompt) {
+        return askOpenRouter(prompt, OPENROUTER_MODEL_C);
+    }
+
+    // Панель D — Nemotron 3 (OpenRouter, бесплатно)
+    async function askNemotron(prompt) {
+        return askOpenRouter(prompt, OPENROUTER_MODEL_D);
+    }
+
+    // ==========================================
+    // Отправка одного запроса всем моделям
     // ==========================================
     async function sendRequests() {
         const query = document.getElementById('inputQuery').value.trim();
         const outQ = document.getElementById('textQwen');
         const outD = document.getElementById('textDeepSeek');
+        const outG = document.getElementById('textGemma');
+        const outN = document.getElementById('textNemotron');
         const spinQ = document.getElementById('spinnerQwen');
         const spinD = document.getElementById('spinnerDeepSeek');
+        const spinG = document.getElementById('spinnerGemma');
+        const spinN = document.getElementById('spinnerNemotron');
         const btn = document.getElementById('btnSubmit');
 
         if (!query) {
@@ -851,26 +995,36 @@
             return;
         }
 
-        // Блокируем кнопку и запускаем обе модели параллельно
+        // Блокируем кнопку и запускаем все модели параллельно
         btn.disabled = true;
-        btn.textContent = "Спрашиваю обе модели...";
+        btn.textContent = "Спрашиваю все 4 модели...";
         spinQ.style.display = 'inline-block';
         spinD.style.display = 'inline-block';
+        spinG.style.display = 'inline-block';
+        spinN.style.display = 'inline-block';
         outQ.textContent = "Gemini 3.6 Flash думает...";
         outD.textContent = "Gemini 3.5 Flash-Lite думает...";
+        outG.textContent = "Gemma 4 думает...";
+        outN.textContent = "Nemotron 3 думает...";
 
-        const [answerQ, answerD] = await Promise.all([
+        const [answerQ, answerD, answerG, answerN] = await Promise.all([
             askQwen(query).catch(err => "[Ошибка A (Gemini 3.6 Flash)]: " + err.message),
-            askDeepSeek(query).catch(err => "[Ошибка B (Gemini 3.5 Flash-Lite)]: " + err.message)
+            askDeepSeek(query).catch(err => "[Ошибка B (Gemini 3.5 Flash-Lite)]: " + err.message),
+            askGemma(query).catch(err => "[Ошибка C (Gemma 4)]: " + err.message),
+            askNemotron(query).catch(err => "[Ошибка D (Nemotron 3)]: " + err.message)
         ]);
 
         spinQ.style.display = 'none';
         spinD.style.display = 'none';
+        spinG.style.display = 'none';
+        spinN.style.display = 'none';
         outQ.textContent = answerQ;
         outD.textContent = answerD;
+        outG.textContent = answerG;
+        outN.textContent = answerN;
 
         btn.disabled = false;
-        btn.textContent = "Отправить обоим моделям";
+        btn.textContent = "Отправить всем моделям";
     }
 
     // Отправка по Enter
@@ -881,8 +1035,9 @@
         }
     });
 
-    // Заполняем сохранённый ключ Gemini при загрузке
+    // Заполняем сохранённые ключи при загрузке
     restoreGeminiKey();
+    restoreOpenRouterKey();
 </script>
 
 </body>
