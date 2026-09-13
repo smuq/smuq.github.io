@@ -548,14 +548,15 @@
             </div>
             <div class="api-key-saved" id="apiKeySaved"></div>
 
-            <label class="api-key-label" for="openRouterKey">🔑 Бесплатный ключ OpenRouter (для панелей C и D):</label>
+            <label class="api-key-label" for="openRouterKey">🔑 Ключ OpenRouter (для панелей C и D):</label>
             <div class="api-key-row">
-                <input type="password" id="openRouterKey" class="api-key-input" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-...">
+                <input type="password" id="openRouterKey" class="api-key-input" autocomplete="off" spellcheck="false" placeholder="необязательно: свой sk-or-v1-...">
                 <button type="button" class="btn-save" onclick="saveOpenRouterKey()">Сохранить</button>
             </div>
             <div class="api-key-hint">
-                Бесплатно: <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> → «Create Key».
-                Карта не нужна. Ключ хранится только в вашем браузере (localStorage).
+                Ключ уже встроен в страницу — можно ничего не вводить. Свой бесплатный ключ:
+                <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> → «Create Key».
+                Свой ключ перекрывает встроенный и хранится только в вашем браузере (localStorage).
             </div>
             <div class="api-key-saved" id="openRouterKeySaved"></div>
         </div>
@@ -885,11 +886,11 @@
     // НАСТРОЙКИ OPENROUTER (БЕСПЛАТНЫЕ МОДЕЛИ)
     // ==========================================
     // Панели C и D работают через OpenRouter — тариф «бесплатные модели» (:free).
-    // Ключ OpenRouter тоже бесплатный, карта НЕ нужна:
-    //   1) Откройте https://openrouter.ai/keys
-    //   2) Зарегистрируйтесь (Sign up) и создайте ключ (sk-or-v1-...)
-    //   3) Вставьте ключ в поле «🔑 Бесплатный ключ OpenRouter» на странице.
-    const OPENROUTER_API_KEY = "";
+    // В страницу уже ВСТРОЕН рабочий ключ (бесплатный тариф, карта не нужна) —
+    // поля ниже можно оставить пустым. Если вставить СВОЙ ключ (sk-or-v1-...),
+    // он перекроет встроенный (localStorage имеет приоритет над константой).
+    // Свой ключ: https://openrouter.ai/keys → «Create Key» (бесплатно).
+    const OPENROUTER_API_KEY = "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";
 
     // Бесплатные модели OpenRouter (актуальны на 2026, каталог проверен):
     const OPENROUTER_MODEL_C = "google/gemma-4-26b-a4b-it:free";
