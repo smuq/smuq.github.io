@@ -276,29 +276,28 @@
 
         .btn-submit {
             font-family: var(--font-fixed);
-            background: linear-gradient( to bottom, #a4d007 5%, #536904 95%);
-            color: #d4e9a8;
+            background: #ffffff;
+            color: #1b2838;
             border: none;
             padding: 15px 40px;
             font-size: 18px;
             font-weight: bold;
-            text-transform: uppercase;
             border-radius: 4px;
             cursor: pointer;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            box-shadow: 0 0 10px rgba(164, 208, 7, 0.3);
+            text-shadow: none;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
             transition: all 0.2s;
         }
 
         .btn-submit:hover {
-            background: linear-gradient( to bottom, #b6e018 5%, #6b8505 95%);
-            color: #fff;
+            background: #e8e8e8;
+            color: #1b2838;
             transform: scale(1.02);
         }
 
         .btn-submit:disabled {
-            background: #222222;
-            color: #888;
+            background: #444444;
+            color: #999999;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -718,7 +717,7 @@
     <!-- Кнопка действия -->
     <div class="action-area">
         <button id="btnSubmit" class="btn-submit" onclick="sendRequests()">
-            Отправить всем моделям
+            Отправить
         </button>
     </div>
 
@@ -1221,7 +1220,7 @@
         outN.textContent = answerN;
 
         btn.disabled = false;
-        btn.textContent = "Отправить всем моделям";
+        btn.textContent = "Отправить";
     }
 
     // Отправка по Enter
