@@ -9,7 +9,7 @@
     
     <style>
         :root {
-            --steam-bg: #1b2838;
+            --steam-bg: #000000;
             --steam-header: #171a21;
             --steam-content: #2a475e;
             --steam-text: #c7d5e0;
@@ -20,6 +20,7 @@
             --deepseek-color: #007bff;
             --gemma-color: #b06bff;
             --nemotron-color: #0aa084;
+            --font-fixed: "Fixedsys Excelsior", Fixedsys, Consolas, "Lucida Console", monospace;
         }
 
         body {
@@ -28,7 +29,6 @@
             font-family: "Motiva Sans", Arial, Helvetica, sans-serif;
             background-color: var(--steam-bg);
             color: var(--steam-text);
-            background-image: linear-gradient(to bottom, #1b2838 0%, #2a475e 100%);
             min-height: 100vh;
             /* Мобильные улучшения */
             -webkit-text-size-adjust: 100%; /* запрещает авто-увеличение текста iOS */
@@ -61,12 +61,12 @@
         }
 
         h1 {
-            color: var(--steam-text);
-            font-size: 24px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            color: #ffffff;
+            font-family: var(--font-fixed);
+            font-size: 28px;
+            letter-spacing: 3px;
             margin: 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 0 0 12px rgba(102, 192, 244, 0.25);
         }
 
         .auth-container {
@@ -99,6 +99,14 @@
         .btn-auth.qwen { background: linear-gradient( to bottom, #ffbf47 5%, #c25c1a 60%); }
         .btn-auth.deepseek { background: linear-gradient( to bottom, #478aff 5%, #1a2cc2 60%); }
 
+        /* Иконка замка на кнопках входа — один и тот же цвет на всех кнопках */
+        .lock-ico {
+            width: 13px;
+            height: 13px;
+            fill: #ffffff;
+            flex: 0 0 auto;
+        }
+
         /* Кнопка модели, в которую уже вошли */
         .btn-auth:disabled {
             cursor: default;
@@ -112,7 +120,7 @@
             align-items: center;
             gap: 10px;
             font-size: 14px;
-            background: rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.05);
             padding: 5px 15px;
             border-radius: 4px;
             border: 1px solid var(--steam-blue);
@@ -151,7 +159,7 @@
         }
 
         .model-input-group {
-            background: rgba(0, 0, 0, 0.2);
+            background: #0d0d0d;
             padding: 20px;
             border-radius: 5px;
             margin-bottom: 20px;
@@ -164,6 +172,7 @@
         .model-input-group.shared { border-left-color: var(--steam-blue); }
 
         .model-label {
+            font-family: var(--font-fixed);
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 10px;
@@ -173,6 +182,7 @@
         }
 
         .badge {
+            font-family: var(--font-fixed);
             font-size: 12px;
             padding: 2px 8px;
             border-radius: 3px;
@@ -201,8 +211,8 @@
         .api-key-input {
             flex: 1 1 260px;
             min-width: 0;
-            background: #101820;
-            border: 1px solid #3a4b5e;
+            background: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.16);
             color: white;
             padding: 8px 10px;
             border-radius: 3px;
@@ -242,8 +252,8 @@
         textarea {
             width: 100%;
             height: 80px;
-            background: #101820;
-            border: 1px solid #3a4b5e;
+            background: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.16);
             color: white;
             padding: 10px;
             border-radius: 3px;
@@ -265,6 +275,7 @@
         }
 
         .btn-submit {
+            font-family: var(--font-fixed);
             background: linear-gradient( to bottom, #a4d007 5%, #536904 95%);
             color: #d4e9a8;
             border: none;
@@ -286,7 +297,7 @@
         }
 
         .btn-submit:disabled {
-            background: #3a4b5e;
+            background: #222222;
             color: #888;
             cursor: not-allowed;
             transform: none;
@@ -307,8 +318,8 @@
         }
 
         .response-card {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #3a4b5e;
+            background: #0b0b0b;
+            border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 5px;
             padding: 14px;
             min-height: 170px;
@@ -318,6 +329,7 @@
         }
 
         .response-card h3 {
+            font-family: var(--font-fixed);
             margin-top: 0;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             padding-bottom: 8px;
@@ -364,6 +376,79 @@
             color: #555;
         }
         .repo-link a { color: var(--steam-blue); text-decoration: none; }
+
+        /* ==========================================
+           ПАНЕЛЬ «ЛИМИТЫ ИИ» (счётчик запросов)
+           ========================================== */
+        .quota-panel {
+            background: #0d0d0d;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 5px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+        }
+        .quota-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .quota-title {
+            font-family: var(--font-fixed);
+            font-size: 13px;
+            letter-spacing: 2px;
+            color: var(--steam-blue);
+        }
+        .quota-live { font-size: 11px; color: #8f98a0; }
+        .quota-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .quota-name {
+            font-family: var(--font-fixed);
+            font-size: 11px;
+            color: var(--steam-text);
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .quota-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .quota-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .qfill-a { background: var(--qwen-color); }
+        .qfill-b { background: var(--deepseek-color); }
+        .qfill-c { background: var(--gemma-color); }
+        .qfill-d { background: var(--nemotron-color); }
+        .quota-num {
+            font-family: var(--font-fixed);
+            font-size: 11px;
+            color: #8f98a0;
+            margin-top: 4px;
+        }
+        .quota-note {
+            margin-top: 10px;
+            font-size: 11px;
+            line-height: 1.45;
+            color: #66707a;
+        }
+        @media (max-width: 768px) {
+            .quota-panel { padding: 10px; }
+            .quota-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .quota-note { font-size: 10px; }
+        }
 /* ==========================================
            МОБИЛЬНАЯ ВЕРСИЯ (до 768px)
            Правила размещены в конце, чтобы
@@ -447,7 +532,7 @@
                 margin: 0;
                 padding: 10px 12px;
                 padding-bottom: calc(10px + env(safe-area-inset-bottom));
-                background: rgba(23, 26, 33, 0.92);
+                background: rgba(0, 0, 0, 0.92);
                 -webkit-backdrop-filter: blur(10px);
                 backdrop-filter: blur(10px);
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -506,15 +591,17 @@
 
 <div class="container">
     <header>
-        <h1>🤖 AI Neural Interface</h1>
+        <h1>Ai</h1>
         
         <div class="auth-container">
-            <!-- Кнопки входа -->
+            <!-- Кнопки входа (иконка замка — один цвет на обеих кнопках) -->
             <button id="btnLoginQwen" class="btn-auth qwen" onclick="handleLogin('qwen')">
-                🔐 Вход (A)
+                <svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9z"/></svg>
+                <span>Вход (A)</span>
             </button>
             <button id="btnLoginDeepSeek" class="btn-auth deepseek" onclick="handleLogin('deepseek')">
-                🔐 Вход (B)
+                <svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9z"/></svg>
+                <span>Вход (B)</span>
             </button>
 
             <!-- Статус пользователя (скрыт по умолчанию) -->
@@ -528,6 +615,37 @@
             <div id="authMessage" class="auth-message" style="display: none;"></div>
         </div>
     </header>
+
+    <!-- Панель «ЛИМИТЫ ИИ»: сколько запросов сделано за сегодня и сколько осталось -->
+    <div class="quota-panel">
+        <div class="quota-head">
+            <span class="quota-title">ЛИМИТЫ ИИ</span>
+            <span class="quota-live" id="orQuotaInfo">OpenRouter: …</span>
+        </div>
+        <div class="quota-grid">
+            <div class="quota-item">
+                <div class="quota-name">A · GEMINI 3.6 FLASH</div>
+                <div class="quota-bar"><div class="quota-fill qfill-a" id="quotaBarA"></div></div>
+                <div class="quota-num" id="quotaNumA">0 / 250</div>
+            </div>
+            <div class="quota-item">
+                <div class="quota-name">B · GEMINI 3.5 LITE</div>
+                <div class="quota-bar"><div class="quota-fill qfill-b" id="quotaBarB"></div></div>
+                <div class="quota-num" id="quotaNumB">0 / 250</div>
+            </div>
+            <div class="quota-item">
+                <div class="quota-name">C · GEMMA 4</div>
+                <div class="quota-bar"><div class="quota-fill qfill-c" id="quotaBarC"></div></div>
+                <div class="quota-num" id="quotaNumC">0 / 50</div>
+            </div>
+            <div class="quota-item">
+                <div class="quota-name">D · NEMOTRON 3</div>
+                <div class="quota-bar"><div class="quota-fill qfill-d" id="quotaBarD"></div></div>
+                <div class="quota-num" id="quotaNumD">0 / 50</div>
+            </div>
+        </div>
+        <div class="quota-note">Счётчик — запросы за сегодня из этого браузера, обнуляется в полночь. Лимиты: A/B — дневная квота Gemini Free Tier; C/D — дневной лимит :free-моделей OpenRouter (50/день, или 1000/день при балансе от $10). Остаток = лимит минус счётчик.</div>
+    </div>
 
     <!-- Секция ввода -->
     <div class="input-section">
@@ -572,7 +690,7 @@
     <!-- Секция вывода -->
     <div class="output-grid">
         <div class="response-card">
-            <h3><span class="badge qwen">GEMINI 3.6 FLASH</span> Ответ A</h3>
+            <h3><span class="badge qwen">GEMINI 3.6 FLASH</span></h3>
             <div class="response-content" id="outputQwen">
                 <span class="loading-spinner" id="spinnerQwen"></span>
                 <span id="textQwen">Ожидание запроса...</span>
@@ -580,7 +698,7 @@
         </div>
 
         <div class="response-card">
-            <h3><span class="badge deepseek">GEMINI 3.5 FLASH-LITE</span> Ответ B</h3>
+            <h3><span class="badge deepseek">GEMINI 3.5 FLASH-LITE</span></h3>
             <div class="response-content" id="outputDeepSeek">
                 <span class="loading-spinner" id="spinnerDeepSeek"></span>
                 <span id="textDeepSeek">Ожидание запроса...</span>
@@ -588,7 +706,7 @@
         </div>
 
         <div class="response-card">
-            <h3><span class="badge gemma">GEMMA 4</span> Ответ C</h3>
+            <h3><span class="badge gemma">GEMMA 4</span></h3>
             <div class="response-content" id="outputGemma">
                 <span class="loading-spinner" id="spinnerGemma"></span>
                 <span id="textGemma">Ожидание запроса...</span>
@@ -596,7 +714,7 @@
         </div>
 
         <div class="response-card">
-            <h3><span class="badge nemotron">NEMOTRON 3</span> Ответ D</h3>
+            <h3><span class="badge nemotron">NEMOTRON 3</span></h3>
             <div class="response-content" id="outputNemotron">
                 <span class="loading-spinner" id="spinnerNemotron"></span>
                 <span id="textNemotron">Ожидание запроса...</span>
@@ -766,10 +884,14 @@
         updateLoginButton(btnDeepSeek, 'B', loginState.deepseek);
     }
 
+    const LOCK_SVG = '<svg class="lock-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9z"/></svg>';
+
     function updateLoginButton(btn, name, loggedIn) {
         btn.style.display = 'flex';
         btn.disabled = loggedIn;
-        btn.textContent = loggedIn ? "✓ " + name : "🔐 " + name + " Вход";
+        btn.innerHTML = loggedIn
+            ? '<span>✓ ' + name + '</span>'
+            : LOCK_SVG + '<span>' + name + ' Вход</span>';
     }
 
     function showAuthMessage(text) {
@@ -874,11 +996,13 @@
 
     // Панель A — Gemini 3.6 Flash
     async function askQwen(prompt) {
+        bumpQuota('A');
         return askGemini(prompt, GEMINI_MODEL_A);
     }
 
     // Панель B — Gemini 3.5 Flash-Lite
     async function askDeepSeek(prompt) {
+        bumpQuota('B');
         return askGemini(prompt, GEMINI_MODEL_B);
     }
 
@@ -929,6 +1053,7 @@
                 localStorage.removeItem(OPENROUTER_KEY_STORAGE);
                 savedEl.textContent = "Ключ удалён.";
             }
+            fetchOpenRouterInfo(); // обновить данные лимитов под новый ключ
         } catch (e) {
             savedEl.textContent = "⚠️ Не удалось сохранить ключ (localStorage недоступен).";
         }
@@ -989,11 +1114,13 @@
 
     // Панель C — Gemma 4 (OpenRouter, бесплатно, с fallback-моделью)
     async function askGemma(prompt) {
+        bumpQuota('C');
         return askOpenRouterAny(prompt, OPENROUTER_MODEL_C);
     }
 
     // Панель D — Nemotron 3 (OpenRouter, бесплатно, с fallback-моделью)
     async function askNemotron(prompt) {
+        bumpQuota('D');
         return askOpenRouterAny(prompt, OPENROUTER_MODEL_D);
     }
 
@@ -1070,9 +1197,85 @@
         }
     });
 
+    // ==========================================
+    // СЧЁТЧИК ЛИМИТОВ (панель «ЛИМИТЫ ИИ»)
+    // ==========================================
+    // Показывает, сколько запросов каждая модель сделала за сегодня
+    // из этого браузера и сколько осталось до дневного лимита.
+    const QUOTA_STORAGE = "ai_quota_counters";
+    const QUOTA_DAILY_DEFAULT = { A: 250, B: 250, C: 50, D: 50 };
+    const quotaDaily = Object.assign({}, QUOTA_DAILY_DEFAULT);
+
+    function quotaTodayKey() {
+        const d = new Date();
+        return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+    }
+
+    function loadQuota() {
+        let q = null;
+        try { q = JSON.parse(localStorage.getItem(QUOTA_STORAGE) || "null"); } catch (e) { q = null; }
+        if (!q || typeof q !== "object" || q.date !== quotaTodayKey()) {
+            q = { date: quotaTodayKey(), A: 0, B: 0, C: 0, D: 0 };
+        }
+        return q;
+    }
+
+    function bumpQuota(letter) {
+        const q = loadQuota();
+        q[letter] = (q[letter] || 0) + 1;
+        try { localStorage.setItem(QUOTA_STORAGE, JSON.stringify(q)); } catch (e) { /* нет localStorage */ }
+        renderQuota();
+    }
+
+    function renderQuota() {
+        const q = loadQuota();
+        const ids = {
+            A: ["quotaBarA", "quotaNumA"],
+            B: ["quotaBarB", "quotaNumB"],
+            C: ["quotaBarC", "quotaNumC"],
+            D: ["quotaBarD", "quotaNumD"]
+        };
+        Object.keys(ids).forEach(function (letter) {
+            const used = q[letter] || 0;
+            const max = quotaDaily[letter] || 1;
+            const bar = document.getElementById(ids[letter][0]);
+            const num = document.getElementById(ids[letter][1]);
+            if (bar) bar.style.width = Math.min(100, (used / max) * 100) + "%";
+            if (num) num.textContent = used + " / " + max + (used >= max ? " — лимит!" : "");
+        });
+    }
+
+    // Живые данные по ключу OpenRouter: лимит запросов/мин, потрачено, дневной лимит
+    async function fetchOpenRouterInfo() {
+        const el = document.getElementById("orQuotaInfo");
+        if (!el) return;
+        const key = getOpenRouterKey();
+        if (!key) { el.textContent = "OpenRouter: ключ не задан"; return; }
+        try {
+            const res = await fetch("https://openrouter.ai/api/v1/key", {
+                headers: { "Authorization": "Bearer " + key }
+            });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const data = await res.json();
+            const d = (data && data.data) || {};
+            const rl = d.rate_limit || {};
+            const rpm = (rl.requests && rl.requests > 0) ? (rl.requests + " запр./" + (rl.interval || "мин")) : "";
+            const spent = (typeof d.usage === "number") ? ("потрачено $" + d.usage.toFixed(4)) : "";
+            const daily = (d.is_free_tier === false) ? 1000 : 50;
+            quotaDaily.C = daily;
+            quotaDaily.D = daily;
+            el.textContent = "OpenRouter · " + [rpm, spent, daily + " :free-запросов/день"].filter(Boolean).join(" · ");
+            renderQuota();
+        } catch (e) {
+            el.textContent = "OpenRouter · данные лимитов недоступны";
+        }
+    }
+
     // Заполняем сохранённые ключи при загрузке
     restoreGeminiKey();
     restoreOpenRouterKey();
+    renderQuota();
+    fetchOpenRouterInfo();
 </script>
 
 </body>
