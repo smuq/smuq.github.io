@@ -367,22 +367,29 @@
             display: block;
         }
 
-        /* Развёрнутое (полноэкранное) окно ответа */
+        /* Развёрнутое окно ответа: +100% к обычному размеру (то есть в 2 раза).
+           Это именно окно, а не весь экран — по краям остаётся виден сайт. */
         .response-card.expanded {
             position: fixed;
-            inset: 0;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
             z-index: 1000;
-            width: 100vw;
-            height: 100vh;
-            height: 100dvh;
+            box-sizing: border-box;
+            /* --exp-w / --exp-h ставит скрипт: 2× от обычного размера карточки.
+               min() не даёт окну закрыть весь экран — по краям остаётся ~6% сайта. */
+            width: min(var(--exp-w, 90vw), 88vw);
+            height: min(var(--exp-h, 80vh), 88vh);
             min-height: 0;
             max-height: none;
-            border-radius: 0;
             padding: 16px;
             overflow: hidden;
+            border-color: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.8);
         }
         .response-card.expanded .response-content {
             max-height: none;
+            min-height: 0;
             flex: 1 1 auto;
         }
         body.card-expanded { overflow: hidden; }
@@ -652,6 +659,12 @@
             .auth-container { gap: 8px; }
             .btn-auth { font-size: 12px; padding: 12px 4px; }
             .model-input-group { padding: 12px; }
+
+            /* На телефоне окно занимает больше экрана — иначе оно слишком узкое */
+            .response-card.expanded {
+                width: min(var(--exp-w, 90vw), 94vw);
+                height: min(var(--exp-h, 80vh), 92vh);
+            }
         }
 
         /* На тач-устройствах не «прилипают» hover-эффекты */
@@ -1285,14 +1298,20 @@
     // ==========================================
     // РАЗВОРАЧИВАНИЕ ОКОН ОТВЕТОВ
     // ==========================================
-    // Кнопка в шапке карточки разворачивает её на весь экран,
+    // Кнопка в шапке карточки увеличивает окно на 100% (в 2 раза),
     // внутри окна ответ свободно прокручивается. Escape — свернуть.
     const SVG_EXPAND = '<svg class="ico-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zM4 14h2v4h4v2H4v-6zm16 0v6h-6v-2h4v-4h2z"/></svg>';
     const SVG_CLOSE = '<svg class="ico-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12 19 17.6 17.6 19 12 13.4 6.4 19 5 17.6 10.6 12 5 6.4 6.4 5z"/></svg>';
 
+    // Окно растёт ровно на 100% (в 2 раза) от своего обычного размера,
+    // но не больше свободного места на экране — по краям остаётся виден сайт.
+    const EXPAND_SCALE = 2;
+
     function collapseAllExpanded() {
         document.querySelectorAll('.response-card.expanded').forEach(function (card) {
             card.classList.remove('expanded');
+            card.style.removeProperty('--exp-w');
+            card.style.removeProperty('--exp-h');
             const b = card.querySelector('.btn-expand');
             if (b) { b.innerHTML = SVG_EXPAND; b.title = 'Развернуть окно'; }
         });
@@ -1303,6 +1322,10 @@
         const card = btn.closest('.response-card');
         if (card.classList.contains('expanded')) { collapseAllExpanded(); return; }
         collapseAllExpanded();
+        // Замеряем обычный размер до разворота и задаём 2× от него.
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--exp-w', Math.round(rect.width * EXPAND_SCALE) + 'px');
+        card.style.setProperty('--exp-h', Math.round(rect.height * EXPAND_SCALE) + 'px');
         card.classList.add('expanded');
         btn.innerHTML = SVG_CLOSE;
         btn.title = 'Свернуть окно';
